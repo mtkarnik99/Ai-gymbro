@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { Pose } from "@mediapipe/pose"; // Import Pose from the new package
 import { Camera, CameraOff, RotateCcw } from "lucide-react"
 import { Button } from "../../components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select"
@@ -16,6 +15,9 @@ export default function CameraPage() {
   const angles = useSquatAnalysis(landmarks);
   const [voiceGender, setVoiceGender] = useState<string>("female")
   const [language, setLanguage] = useState<string>("english")
+  const [stage, setStage] = useState<'up' | 'down'>('up');
+  const [counter, setCounter] = useState(0);
+  const [feedback, setFeedback] = useState('Begin your squats when ready.');
 
   useEffect(() => {
     startCamera();
@@ -96,6 +98,45 @@ export default function CameraPage() {
     }
   }, [landmarks]) // This effect re-runs every time new landmarks are received
 
+  useEffect(() => {
+    // Only run analysis if we have landmarks
+    if (landmarks.length === 0) return;
+
+    // Use the average of both knee angles for a more stable reading
+    const leftKnee = angles.leftKnee;
+    const rightKnee = angles.rightKnee;
+
+    // --- Rep Counting Logic ---
+    // Check if the user has reached the "down" position of the squat
+    if (leftKnee < 90 && rightKnee < 90) {
+      // To count a rep, we only want to fire once when transitioning from 'up' to 'down'
+      if (stage === 'up') {
+        setStage('down');
+        setFeedback('Great depth! Push up!');
+      }
+    }
+
+    // Check if the user has returned to the "up" position
+    if (leftKnee > 160 && rightKnee > 160) {
+      // If they were previously in the 'down' stage, it means they completed a rep
+      if (stage === 'down') {
+        setCounter(prevCounter => prevCounter + 1);
+        setFeedback('Good Rep!');
+      }
+      setStage('up');
+    }
+
+    // --- Corrective Feedback Logic (Example) ---
+    // This can be expanded with more rules
+    if (stage === 'down') {
+        const kneeDifference = Math.abs(leftKnee - rightKnee);
+        if (kneeDifference > 15) { // Check for significant imbalance
+            setFeedback("Keep your knees even!");
+        }
+    }
+
+}, [angles, landmarks, stage]);
+
   return (
     <div className="relative h-screen w-full bg-black overflow-hidden">
       {/* Header */}
@@ -163,6 +204,20 @@ export default function CameraPage() {
             <div className="flex items-center space-x-4">
               <h1 className="text-white text-xl font-semibold">AI Gymbro</h1>
             </div>
+
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 text-white">
+            <div className="flex justify-between items-end">
+              {/* Rep Counter */}
+              <div>
+                <div className="text-white text-2xl font-bold">REPS</div>
+                <div className="text-white text-6xl font-semibold">{counter}</div>
+                </div> 
+                {/* Real-time Feedback Message */}
+                <div className="text-white text-2xl font-medium p-2 bg-white/10 rounded-lg backdrop-blur-sm max-w-sm text-right">
+                {feedback}
+                </div>
+                </div>
+                </div>
 
             <div className="flex items-center space-x-4">
               {/* Voiceover Gender Selection */}
