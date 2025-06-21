@@ -1,116 +1,176 @@
-import Image from 'next/image'
-import Link from 'next/link'
+"use client"
 
-export default function Home() {
+import { useEffect, useRef, useState } from "react"
+import { Camera, CameraOff, RotateCcw } from "lucide-react"
+import { Button } from "@/components/ui/button"
+
+export default function CameraPage() {
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [stream, setStream] = useState<MediaStream | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [isCameraOn, setIsCameraOn] = useState(false)
+  const [facingMode, setFacingMode] = useState<"user" | "environment">("environment")
+
+  const startCamera = async (facing: "user" | "environment" = facingMode) => {
+    try {
+      setIsLoading(true)
+      setError(null)
+
+      // Stop existing stream if any
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop())
+      }
+
+      const constraints: MediaStreamConstraints = {
+        video: {
+          facingMode: facing,
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+        },
+        audio: false,
+      }
+
+      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints)
+      setStream(mediaStream)
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream
+        await videoRef.current.play()
+      }
+
+      setIsCameraOn(true)
+      setFacingMode(facing)
+    } catch (err) {
+      console.error("Error accessing camera:", err)
+      setError("Unable to access camera. Please check permissions.")
+      setIsCameraOn(false)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop())
+      setStream(null)
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null
+    }
+    setIsCameraOn(false)
+  }
+
+  const toggleCamera = () => {
+    if (isCameraOn) {
+      stopCamera()
+    } else {
+      startCamera()
+    }
+  }
+
+  const switchCamera = () => {
+    const newFacingMode = facingMode === "user" ? "environment" : "user"
+    startCamera(newFacingMode)
+  }
+
+  useEffect(() => {
+    // Auto-start camera on component mount
+    startCamera()
+
+    // Cleanup on unmount
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop())
+      }
+    }
+  }, [])
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <Link href="/api/python">
-            <code className="font-mono font-bold">api/index.py</code>
-          </Link>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+    <div className="relative h-screen w-full bg-black overflow-hidden">
+      {/* Camera View */}
+      <div className="relative h-full w-full">
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black z-10">
+            <div className="text-white text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+              <p>Loading camera...</p>
+            </div>
+          </div>
+        )}
+
+        {error && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black z-10">
+            <div className="text-white text-center p-6">
+              <CameraOff className="h-16 w-16 mx-auto mb-4 text-red-500" />
+              <p className="mb-4">{error}</p>
+              <Button onClick={() => startCamera()} variant="outline" className="bg-white text-black">
+                Try Again
+              </Button>
+            </div>
+          </div>
+        )}
+
+        <video
+          ref={videoRef}
+          className="h-full w-full object-cover"
+          playsInline
+          muted
+          autoPlay
+          style={{
+            transform: facingMode === "user" ? "scaleX(-1)" : "none",
+          }}
+        />
+
+        {/* Camera Controls Overlay */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6">
+          <div className="flex items-center justify-center space-x-6">
+            {/* Switch Camera Button */}
+            <Button
+              onClick={switchCamera}
+              size="lg"
+              variant="outline"
+              className="bg-white/20 border-white/30 text-white hover:bg-white/30 backdrop-blur-sm"
+              disabled={!isCameraOn}
+            >
+              <RotateCcw className="h-6 w-6" />
+            </Button>
+
+            {/* Main Camera Toggle Button */}
+            <Button
+              onClick={toggleCamera}
+              size="lg"
+              className={`h-16 w-16 rounded-full ${
+                isCameraOn ? "bg-red-500 hover:bg-red-600" : "bg-white hover:bg-gray-200"
+              }`}
+            >
+              {isCameraOn ? <CameraOff className="h-8 w-8 text-white" /> : <Camera className="h-8 w-8 text-black" />}
+            </Button>
+
+            {/* Placeholder for additional controls */}
+            <div className="w-12 h-12"></div>
+          </div>
+        </div>
+
+        {/* Status Indicator */}
+        <div className="absolute top-4 left-4 right-4">
+          <div className="flex items-center justify-between">
+            <div
+              className={`px-3 py-1 rounded-full text-sm font-medium ${
+                isCameraOn ? "bg-green-500/80 text-white" : "bg-red-500/80 text-white"
+              } backdrop-blur-sm`}
+            >
+              {isCameraOn ? "Camera On" : "Camera Off"}
+            </div>
+
+            {isCameraOn && (
+              <div className="px-3 py-1 rounded-full text-sm font-medium bg-black/50 text-white backdrop-blur-sm">
+                {facingMode === "user" ? "Front" : "Back"} Camera
+              </div>
+            )}
+          </div>
         </div>
       </div>
-
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800 hover:dark:bg-opacity-30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore the Next.js 13 playground.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+    </div>
   )
 }
