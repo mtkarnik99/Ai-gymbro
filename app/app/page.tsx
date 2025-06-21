@@ -12,12 +12,10 @@ export default function CameraPage() {
   const { videoRef, isCameraOn, facingMode, error, startCamera, toggleCamera, switchCamera } = useCamera();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { landmarks } = usePoseEstimation({ videoRef, isCameraOn });
-  const angles = useSquatAnalysis(landmarks);
+  const { angles, counter, feedback } = useSquatAnalysis(landmarks);
   const [voiceGender, setVoiceGender] = useState<string>("female")
   const [language, setLanguage] = useState<string>("english")
   const [stage, setStage] = useState<'up' | 'down'>('up');
-  const [counter, setCounter] = useState(0);
-  const [feedback, setFeedback] = useState('Begin your squats when ready.');
 
   useEffect(() => {
     startCamera();
@@ -97,45 +95,6 @@ export default function CameraPage() {
       ctx?.clearRect(0, 0, canvas.width, canvas.height)
     }
   }, [landmarks]) // This effect re-runs every time new landmarks are received
-
-  useEffect(() => {
-    // Only run analysis if we have landmarks
-    if (landmarks.length === 0) return;
-
-    // Use the average of both knee angles for a more stable reading
-    const leftKnee = angles.leftKnee;
-    const rightKnee = angles.rightKnee;
-
-    // --- Rep Counting Logic ---
-    // Check if the user has reached the "down" position of the squat
-    if (leftKnee < 90 && rightKnee < 90) {
-      // To count a rep, we only want to fire once when transitioning from 'up' to 'down'
-      if (stage === 'up') {
-        setStage('down');
-        setFeedback('Great depth! Push up!');
-      }
-    }
-
-    // Check if the user has returned to the "up" position
-    if (leftKnee > 160 && rightKnee > 160) {
-      // If they were previously in the 'down' stage, it means they completed a rep
-      if (stage === 'down') {
-        setCounter(prevCounter => prevCounter + 1);
-        setFeedback('Good Rep!');
-      }
-      setStage('up');
-    }
-
-    // --- Corrective Feedback Logic (Example) ---
-    // This can be expanded with more rules
-    if (stage === 'down') {
-        const kneeDifference = Math.abs(leftKnee - rightKnee);
-        if (kneeDifference > 15) { // Check for significant imbalance
-            setFeedback("Keep your knees even!");
-        }
-    }
-
-}, [angles, landmarks, stage]);
 
   return (
     <div className="relative h-screen w-full bg-black overflow-hidden">
