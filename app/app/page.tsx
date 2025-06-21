@@ -3,15 +3,17 @@
 import { useEffect, useRef, useState } from "react"
 import { Pose } from "@mediapipe/pose"; // Import Pose from the new package
 import { Camera, CameraOff, RotateCcw } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useCamera } from "@/app/hooks/useCamera";
-import { usePoseEstimation } from "@/app/hooks/usePoseEstimation";
+import { Button } from "../../components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select"
+import { useCamera } from "../../app/hooks/useCamera";
+import { usePoseEstimation } from "../../app/hooks/usePoseEstimation";
+import { useSquatAnalysis } from "../../app/hooks/useSquatAnalysis"
 
 export default function CameraPage() {
   const { videoRef, isCameraOn, facingMode, error, startCamera, toggleCamera, switchCamera } = useCamera();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { landmarks } = usePoseEstimation({ videoRef, isCameraOn });
+  const angles = useSquatAnalysis(landmarks);
   const [voiceGender, setVoiceGender] = useState<string>("female")
   const [language, setLanguage] = useState<string>("english")
 
@@ -253,8 +255,21 @@ export default function CameraPage() {
 
         <canvas ref={canvasRef} className="absolute top-0 left-0 h-full w-full" />
 
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6">
-          <div className="text-white text-sm">
+         {/* MODIFIED: Updated bottom overlay to show angles AND controls */}
+         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 text-white">
+          {/* Angle display added here */}
+          <div className="mb-4">
+            <h3 className="text-base font-semibold">Squat Analysis</h3>
+            <div className="grid grid-cols-2 gap-x-6 gap-y-1 mt-1 text-sm font-mono">
+                <span>L.Hip: {Math.round(angles.leftHip)}°</span>
+                <span>R.Hip: {Math.round(angles.rightHip)}°</span>
+                <span>L.Knee: {Math.round(angles.leftKnee)}°</span>
+                <span>R.Knee: {Math.round(angles.rightKnee)}°</span>
+            </div>
+          </div>
+          
+          {/* Existing controls are preserved below */}
+          <div className="text-white text-sm border-t border-white/20 pt-3">
             Voice: {voiceGender} | Language: {language.charAt(0).toUpperCase() + language.slice(1)}
           </div>
         </div>
