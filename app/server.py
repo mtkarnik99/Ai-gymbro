@@ -34,7 +34,6 @@ async def websocket_endpoint(websocket: WebSocket):
         nparr = np.frombuffer(img_data, np.uint8)
         frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-        # --- Process the frame with MediaPipe ---
         image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         results = pose.process(image)
 
