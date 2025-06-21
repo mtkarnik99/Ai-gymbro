@@ -265,7 +265,7 @@ export default function CameraPage() {
         <div className="hidden md:block">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center space-x-4">
-              <h1 className="text-white text-xl font-semibold">Pose Detection</h1>
+              <h1 className="text-white text-xl font-semibold">AI Gymbro</h1>
             </div>
 
             <div className="flex items-center space-x-4">
