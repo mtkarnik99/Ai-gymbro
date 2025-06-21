@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { Pose } from "@mediapipe/pose"; // Import Pose from the new package
 import { Camera, CameraOff, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -8,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export default function CameraPage() {
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const socketRef = useRef<WebSocket | null>(null)
+  const poseRef = useRef<Pose | null>(null); // This will hold the AI model instance
 
   const [stream, setStream] = useState<MediaStream | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -93,61 +94,60 @@ export default function CameraPage() {
     startCamera(newFacingMode)
   }
 
-  // Main useEffect for setup and teardown
+  // This is the main setup useEffect. It now loads the AI model instead of connecting to a WebSocket.
   useEffect(() => {
-    // 1. Start the camera when the component mounts
-    startCamera()
+    // 1. Initialize the MediaPipe Pose model
+    const pose = new Pose({
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`,
+    });
+    
+    pose.setOptions({
+      modelComplexity: 1,
+      smoothLandmarks: true,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5
+    });
 
-    // 2. Establish the WebSocket connection
-    socketRef.current = new WebSocket("wss://ai-gymbro.onrender.com/ws")
-
-    socketRef.current.onopen = () => console.log("WebSocket connection established")
-    socketRef.current.onclose = () => console.log("WebSocket connection closed")
-    socketRef.current.onerror = (error) => console.error("WebSocket error:", error)
-
-    // 3. Set up the message handler to receive landmarks from the server
-    socketRef.current.onmessage = (event) => {
-      const data = JSON.parse(event.data)
-      if (data.length > 0) {
-        setLandmarks(data)
+    // 2. Set up the callback for when results are returned from the model
+    pose.onResults((results) => {
+      if (results.poseLandmarks) {
+        setLandmarks(results.poseLandmarks);
       } else {
-        setLandmarks([]) // Clear landmarks if no person is detected
+        setLandmarks([]);
       }
-    }
+    });
 
-    // 4. Define the cleanup logic to run when the component unmounts
+    poseRef.current = pose;
+
+    // 3. Start the camera
+    startCamera();
+
+    // 4. Cleanup logic
     return () => {
-      socketRef.current?.close()
+      pose.close();
       if (stream) {
-        stream.getTracks().forEach((track) => track.stop())
+        stream.getTracks().forEach((track) => track.stop());
       }
     }
-  }, [])
+  }, []); // Runs once on component mount
 
-  // This useEffect is dedicated to sending frames to the backend
+  // This useEffect creates the loop to process video frames
   useEffect(() => {
-    if (!isCameraOn || socketRef.current?.readyState !== WebSocket.OPEN) {
-      return // Don't do anything if camera is off or socket is not ready
-    }
-
-    const intervalId = setInterval(() => {
-      const video = videoRef.current
-      if (video) {
-        const canvas = document.createElement("canvas")
-        canvas.width = video.videoWidth
-        canvas.height = video.videoHeight
-        const ctx = canvas.getContext("2d")
-        if (ctx) {
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-          const dataUrl = canvas.toDataURL("image/jpeg")
-          socketRef.current?.send(dataUrl)
-        }
+    let frameId: number;
+    const processVideo = async () => {
+      if (isCameraOn && videoRef.current?.readyState === 4 && poseRef.current) {
+        await poseRef.current.send({ image: videoRef.current });
       }
-    }, 50)
+      frameId = requestAnimationFrame(processVideo);
+    };
 
-    // Cleanup function to stop sending frames when the camera is turned off
-    return () => clearInterval(intervalId)
-  }, [isCameraOn]) // This effect depends on `isCameraOn`
+    if (isCameraOn) {
+      processVideo();
+    }
+    return () => {
+      cancelAnimationFrame(frameId);
+    };
+  }, [isCameraOn]);
 
   // This useEffect is dedicated to drawing the skeleton and landmarks
   useEffect(() => {
