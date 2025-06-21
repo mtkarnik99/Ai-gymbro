@@ -85,7 +85,7 @@ export default function CameraPage() {
     startCamera()
 
     // 2. Establish the WebSocket connection
-    socketRef.current = new WebSocket("ws://ai-gymbro.onrender.com/ws")
+    socketRef.current = new WebSocket("wss://ai-gymbro.onrender.com/ws")
 
     socketRef.current.onopen = () => console.log("WebSocket connection established")
     socketRef.current.onclose = () => console.log("WebSocket connection closed")
