@@ -11,8 +11,12 @@ export default function CameraPage() {
   const { videoRef, isCameraOn, facingMode, error, startCamera, toggleCamera, switchCamera } = useCamera();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { landmarks } = usePoseEstimation({ videoRef, isCameraOn });
-  const [voiceGender, setVoiceGender] = useState<string>("Female")
-  const [language, setLanguage] = useState<string>("English")
+  const [voiceGender, setVoiceGender] = useState<string>("female")
+  const [language, setLanguage] = useState<string>("english")
+
+  useEffect(() => {
+    startCamera();
+  }, []);
 
   const POSE_CONNECTIONS = [
     // Torso
