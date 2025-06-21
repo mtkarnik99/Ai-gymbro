@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { Camera, CameraOff, RotateCcw } from "lucide-react"
+import { Camera, CameraOff, RotateCcw } from 'lucide-react'
 import { Button } from "../../components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select"
 import { useCamera } from "../../app/hooks/useCamera";
@@ -205,20 +205,6 @@ export default function CameraPage() {
               <h1 className="text-white text-xl font-semibold">AI Gymbro</h1>
             </div>
 
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 text-white">
-            <div className="flex justify-between items-end">
-              {/* Rep Counter */}
-              <div>
-                <div className="text-white text-2xl font-bold">REPS</div>
-                <div className="text-white text-6xl font-semibold">{counter}</div>
-                </div> 
-                {/* Real-time Feedback Message */}
-                <div className="text-white text-2xl font-medium p-2 bg-white/10 rounded-lg backdrop-blur-sm max-w-sm text-right">
-                {feedback}
-                </div>
-                </div>
-                </div>
-
             <div className="flex items-center space-x-4">
               {/* Voiceover Gender Selection */}
               <div className="flex items-center space-x-2">
@@ -276,6 +262,22 @@ export default function CameraPage() {
         </div>
       </div>
 
+      {/* Rep Counter - Top Left */}
+      <div className="absolute top-24 md:top-20 left-4 z-30">
+        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-3 md:p-4 text-center min-w-[100px] md:min-w-[120px]">
+          <div className="text-white/80 text-xs md:text-sm font-medium uppercase tracking-wider">Reps</div>
+          <div className="text-white text-3xl md:text-5xl font-bold leading-none mt-1">{counter}</div>
+        </div>
+      </div>
+
+      {/* Feedback - Top Right */}
+      <div className="absolute top-24 md:top-20 right-4 z-30">
+        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-3 md:p-4 max-w-[200px] md:max-w-xs">
+          <div className="text-white/80 text-xs md:text-sm font-medium uppercase tracking-wider mb-1">Feedback</div>
+          <div className="text-white text-sm md:text-base font-medium leading-tight">{feedback}</div>
+        </div>
+      </div>
+
       {/* Camera View */}
       <div className="relative h-full w-full pt-20 md:pt-16">
         {error && (
@@ -311,20 +313,21 @@ export default function CameraPage() {
         <canvas ref={canvasRef} className="absolute top-0 left-0 h-full w-full" />
 
          {/* MODIFIED: Updated bottom overlay to show angles AND controls */}
-         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 text-white">
-          {/* Angle display added here */}
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-4 md:p-6 text-white pt-2 md:pt-4">
+          
+          {/* Angle display */}
           <div className="mb-4">
-            <h3 className="text-base font-semibold">Squat Analysis</h3>
-            <div className="grid grid-cols-2 gap-x-6 gap-y-1 mt-1 text-sm font-mono">
-                <span>L.Hip: {Math.round(angles.leftHip)}°</span>
-                <span>R.Hip: {Math.round(angles.rightHip)}°</span>
-                <span>L.Knee: {Math.round(angles.leftKnee)}°</span>
-                <span>R.Knee: {Math.round(angles.rightKnee)}°</span>
+            <h3 className="text-white/80 text-sm md:text-base font-semibold uppercase tracking-wider mb-2">Squat Analysis</h3>
+            <div className="grid grid-cols-2 gap-x-4 md:gap-x-6 gap-y-1 text-xs md:text-sm font-mono bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-3">
+                <span className="text-white/90">L.Hip: <span className="text-white font-semibold">{Math.round(angles.leftHip)}°</span></span>
+                <span className="text-white/90">R.Hip: <span className="text-white font-semibold">{Math.round(angles.rightHip)}°</span></span>
+                <span className="text-white/90">L.Knee: <span className="text-white font-semibold">{Math.round(angles.leftKnee)}°</span></span>
+                <span className="text-white/90">R.Knee: <span className="text-white font-semibold">{Math.round(angles.rightKnee)}°</span></span>
             </div>
           </div>
           
-          {/* Existing controls are preserved below */}
-          <div className="text-white text-sm border-t border-white/20 pt-3">
+          {/* Settings summary */}
+          <div className="text-white/60 text-xs md:text-sm border-t border-white/10 pt-3 text-center">
             Voice: {voiceGender} | Language: {language.charAt(0).toUpperCase() + language.slice(1)}
           </div>
         </div>
