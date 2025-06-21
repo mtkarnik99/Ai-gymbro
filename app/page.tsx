@@ -11,13 +11,13 @@ export default function LandingPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <div className="container mx-auto px-4 py-8">
         {/* Hero Section */}
-        <section className="text-center py-16 md:py-24">
+        <section className="text-center py-16 md:py-8">
           <Badge className="mb-4 bg-blue-100 text-blue-800 hover:bg-blue-200">
             <Zap className="w-3 h-3 mr-1" />
             AI-Powered Form Analysis
           </Badge>
 
-          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
+          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6 mt-4 leading-tight">
             Perfect Your
             <span className="text-blue-600 block">Squat Form</span>
             with AI
