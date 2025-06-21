@@ -5,18 +5,13 @@ import { Pose } from "@mediapipe/pose"; // Import Pose from the new package
 import { Camera, CameraOff, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useCamera } from "@/app/hooks/useCamera";
+import { usePoseEstimation } from "@/app/hooks/usePoseEstimation";
 
 export default function CameraPage() {
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const poseRef = useRef<Pose | null>(null); // This will hold the AI model instance
-
-  const [stream, setStream] = useState<MediaStream | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [isCameraOn, setIsCameraOn] = useState(false)
-  const [facingMode, setFacingMode] = useState<"user" | "environment">("environment")
-  const [landmarks, setLandmarks] = useState<any[]>([])
+  const { videoRef, isCameraOn, facingMode, error, startCamera, toggleCamera, switchCamera } = useCamera();
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const { landmarks } = usePoseEstimation({ videoRef, isCameraOn });
   const [voiceGender, setVoiceGender] = useState<string>("female")
   const [language, setLanguage] = useState<string>("english")
 
@@ -43,111 +38,6 @@ export default function CameraPage() {
     [24, 26], // Right hip to right knee
     [26, 28], // Right knee to right ankle
   ]
-
-  const startCamera = async (facing: "user" | "environment" = facingMode) => {
-    try {
-      setIsLoading(true)
-      setError(null)
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop())
-      }
-      const constraints = {
-        video: { facingMode: facing, width: { ideal: 1920 }, height: { ideal: 1080 } },
-        audio: false,
-      }
-      const mediaStream = await navigator.mediaDevices.getUserMedia(constraints)
-      setStream(mediaStream)
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream
-        await videoRef.current.play()
-      }
-      setIsCameraOn(true)
-      setFacingMode(facing)
-    } catch (err) {
-      console.error("Error accessing camera:", err)
-      setError("Unable to access camera. Please check permissions.")
-      setIsCameraOn(false)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const stopCamera = () => {
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop())
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null
-    }
-    setIsCameraOn(false)
-  }
-
-  const toggleCamera = () => {
-    if (isCameraOn) {
-      stopCamera()
-    } else {
-      startCamera()
-    }
-  }
-  const switchCamera = () => {
-    const newFacingMode = facingMode === "user" ? "environment" : "user"
-    startCamera(newFacingMode)
-  }
-
-  // This is the main setup useEffect. It now loads the AI model instead of connecting to a WebSocket.
-  useEffect(() => {
-    // 1. Initialize the MediaPipe Pose model
-    const pose = new Pose({
-      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`,
-    });
-    
-    pose.setOptions({
-      modelComplexity: 1,
-      smoothLandmarks: true,
-      minDetectionConfidence: 0.5,
-      minTrackingConfidence: 0.5
-    });
-
-    // 2. Set up the callback for when results are returned from the model
-    pose.onResults((results) => {
-      if (results.poseLandmarks) {
-        setLandmarks(results.poseLandmarks);
-      } else {
-        setLandmarks([]);
-      }
-    });
-
-    poseRef.current = pose;
-
-    // 3. Start the camera
-    startCamera();
-
-    // 4. Cleanup logic
-    return () => {
-      pose.close();
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
-      }
-    }
-  }, []); // Runs once on component mount
-
-  // This useEffect creates the loop to process video frames
-  useEffect(() => {
-    let frameId: number;
-    const processVideo = async () => {
-      if (isCameraOn && videoRef.current?.readyState === 4 && poseRef.current) {
-        await poseRef.current.send({ image: videoRef.current });
-      }
-      frameId = requestAnimationFrame(processVideo);
-    };
-
-    if (isCameraOn) {
-      processVideo();
-    }
-    return () => {
-      cancelAnimationFrame(frameId);
-    };
-  }, [isCameraOn]);
 
   // This useEffect is dedicated to drawing the skeleton and landmarks
   useEffect(() => {
@@ -327,7 +217,7 @@ export default function CameraPage() {
 
       {/* Camera View */}
       <div className="relative h-full w-full pt-20 md:pt-16">
-        {isLoading && (
+        {error && (
           <div className="absolute inset-0 flex items-center justify-center bg-black z-10">
             <div className="text-white text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
