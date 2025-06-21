@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { Pose } from "@mediapipe/pose"; // Import Pose from the new package
 import { Camera, CameraOff, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -12,8 +11,8 @@ export default function CameraPage() {
   const { videoRef, isCameraOn, facingMode, error, startCamera, toggleCamera, switchCamera } = useCamera();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { landmarks } = usePoseEstimation({ videoRef, isCameraOn });
-  const [voiceGender, setVoiceGender] = useState<string>("female")
-  const [language, setLanguage] = useState<string>("english")
+  const [voiceGender, setVoiceGender] = useState<string>("Female")
+  const [language, setLanguage] = useState<string>("English")
 
   const POSE_CONNECTIONS = [
     // Torso
