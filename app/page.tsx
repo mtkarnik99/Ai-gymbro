@@ -6,11 +6,14 @@ import { Button } from "@/components/ui/button"
 
 export default function CameraPage() {
   const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null) // canvas for drawing
+  const socketRef = useRef<WebSocket | null>(null) // WebSocket reference
   const [stream, setStream] = useState<MediaStream | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isCameraOn, setIsCameraOn] = useState(false)
   const [facingMode, setFacingMode] = useState<"user" | "environment">("environment")
+  const [landmarks, setLandmarks] = useState<any[]>([])
 
   const startCamera = async (facing: "user" | "environment" = facingMode) => {
     try {
@@ -74,6 +77,80 @@ export default function CameraPage() {
     startCamera(newFacingMode)
   }
 
+  const sendFrame = () => {
+    if (socketRef.current?.readyState === WebSocket.OPEN && videoRef.current) {
+      const canvas = document.createElement("canvas")
+      canvas.width = videoRef.current.videoWidth
+      canvas.height = videoRef.current.videoHeight
+      const ctx = canvas.getContext("2d")
+      if (ctx) {
+        ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height)
+        const dataUrl = canvas.toDataURL("image/jpeg")
+        socketRef.current.send(dataUrl)
+      }
+    }
+  }
+
+    // useEffect to manage WebSocket connection and frame sending
+    useEffect(() => {
+      // Connect to the WebSocket server
+      socketRef.current = new WebSocket("ws://localhost:8000/ws")
+  
+      socketRef.current.onopen = () => {
+        console.log("WebSocket connection established")
+        // Start sending frames every 100ms (10fps)
+        const intervalId = setInterval(sendFrame, 100)
+        
+        // Cleanup interval on close
+        socketRef.current!.onclose = () => {
+          clearInterval(intervalId)
+        }
+      }
+  
+      socketRef.current.onmessage = (event) => {
+        const data = JSON.parse(event.data)
+        if (data.length > 0) {
+          setLandmarks(data)
+        }
+      }
+  
+      socketRef.current.onerror = (error) => {
+        console.error("WebSocket error:", error)
+      }
+  
+      // Cleanup WebSocket on component unmount
+      return () => {
+        socketRef.current?.close()
+      }
+    }, [])
+  
+    // useEffect to draw landmarks on the canvas when they update
+    useEffect(() => {
+      const canvas = canvasRef.current
+      const video = videoRef.current
+      if (canvas && video && landmarks.length > 0) {
+        const ctx = canvas.getContext("2d")
+        if (ctx) {
+          // Match canvas size to video display size
+          canvas.width = video.clientWidth
+          canvas.height = video.clientHeight
+          
+          ctx.clearRect(0, 0, canvas.width, canvas.height)
+          
+          // Draw each landmark as a circle
+          landmarks.forEach(lm => {
+              const x = lm.x * canvas.width
+              const y = lm.y * canvas.height
+              ctx.beginPath()
+              ctx.arc(x, y, 5, 0, 2 * Math.PI)
+              ctx.fillStyle = "aqua"
+              ctx.fill()
+          })
+          // You can also add logic here to draw lines between landmarks to form a skeleton
+        }
+      }
+    }, [landmarks])
+
   useEffect(() => {
     // Auto-start camera on component mount
     startCamera()
@@ -120,6 +197,11 @@ export default function CameraPage() {
           style={{
             transform: facingMode === "user" ? "scaleX(-1)" : "none",
           }}
+        />
+        
+        <canvas
+          ref={canvasRef}
+          className="absolute top-0 left-0 h-full w-full"
         />
 
         {/* Camera Controls Overlay */}
