@@ -136,9 +136,9 @@ export default function LandingPage() {
 
               <div className="relative">
                 <img
-                  src="/placeholder.svg?height=500&width=400"
+                  src="personsquat.png"
                   alt="Person doing squats with form analysis"
-                  className="w-full h-auto rounded-2xl shadow-lg"
+                  className="w-96 mx-auto h-100 rounded-2xl shadow-lg"
                 />
               </div>
             </div>
