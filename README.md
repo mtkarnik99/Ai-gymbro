@@ -1,2 +1,2 @@
-# Ai-gymbro
+# bro
 Personalized AI trainer providing real time feedback based on current real time poses

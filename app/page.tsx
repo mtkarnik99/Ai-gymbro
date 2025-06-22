@@ -20,7 +20,7 @@ export default function LandingPage() {
           <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6 mt-4 leading-tight">
             Perfect Your
             <span className="text-blue-600 block">Workout Form</span>
-            with AI Gymbro!
+            with GYMBROAI!
           </h1>
 
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed">
@@ -47,7 +47,7 @@ export default function LandingPage() {
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Advanced Form Analysis</h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               Our AI analyzes your movement in real-time to help you achieve perfect exercise form, whether it be squats or pushups!
-              AI Gymbro can be your personal trainer anywhere!
+              GYMBROAI can be your personal trainer anywhere!
             </p>
           </div>
 

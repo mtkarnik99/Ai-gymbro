@@ -180,7 +180,7 @@ export default function CameraPage() {
         <div className="block md:hidden">
           <div className="flex items-center justify-between p-3">
             <Link href="/">
-              <h1 className="text-white text-lg font-semibold">AI Gymbro</h1>
+              <h1 className="text-white text-lg font-semibold">GYMBROAI</h1>
               </Link>
             <div className="flex items-center space-x-2">
               <Button
@@ -240,7 +240,7 @@ export default function CameraPage() {
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center space-x-4">
             <Link href="/">
-              <h1 className="text-white text-xl font-semibold">AI Gymbro</h1>
+              <h1 className="text-white text-xl font-semibold">GYMBROAI</h1>
               </Link>
             </div>
 
