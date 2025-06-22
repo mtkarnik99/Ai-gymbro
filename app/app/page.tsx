@@ -22,7 +22,7 @@ export default function CameraPage() {
   const activeAnalysis = exercise === 'squat' ? squatAnalysis : pushupAnalysis;
   const { angles, counter, formError } = activeAnalysis; 
   const prevCounterRef = useRef(counter);
-
+  const VOICE_IDS: Record<string, string> = {male: "wViXBPUzp2ZZixB1xQuM", female: "cgSgspJ2msm6clMCkdW9"};
   const isFetchingFeedback = useRef(false);
   const lastEventTimestamp = useRef(0);
   
@@ -92,6 +92,8 @@ export default function CameraPage() {
               angles: angles,
               repCount: counter,
               formError: formError,
+              voice_id: VOICE_IDS[voiceGender], 
+              // language: language,
             }),
           });
           
