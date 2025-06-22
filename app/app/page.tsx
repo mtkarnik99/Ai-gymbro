@@ -7,6 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { useCamera } from "../../app/hooks/useCamera";
 import { usePoseEstimation } from "../../app/hooks/usePoseEstimation";
 import { useSquatAnalysis } from "../../app/hooks/useSquatAnalysis"
+import React from "react"
+import Link from "next/link"
+
 
 export default function CameraPage() {
   const { videoRef, isCameraOn, facingMode, error, startCamera, toggleCamera, switchCamera } = useCamera();
@@ -103,7 +106,9 @@ export default function CameraPage() {
         {/* Mobile Layout */}
         <div className="block md:hidden">
           <div className="flex items-center justify-between p-3">
-            <h1 className="text-white text-lg font-semibold">AI Gymbro</h1>
+            <Link href="/">
+              <h1 className="text-white text-lg font-semibold">AI Gymbro</h1>
+              </Link>
             <div className="flex items-center space-x-2">
               <Button
                 onClick={toggleCamera}
@@ -161,7 +166,9 @@ export default function CameraPage() {
         <div className="hidden md:block">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center space-x-4">
+            <Link href="/">
               <h1 className="text-white text-xl font-semibold">AI Gymbro</h1>
+              </Link>
             </div>
 
             <div className="flex items-center space-x-4">
@@ -223,7 +230,7 @@ export default function CameraPage() {
 
       {/* Rep Counter - Top Left */}
       <div className="absolute top-24 md:top-20 left-4 z-30">
-        <div className="bg-black/40 backdrop-blur-md border border-white/20 rounded-xl p-3 md:p-4 text-center min-w-[100px] md:min-w-[120px]">
+        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-3 md:p-4 text-center min-w-[100px] md:min-w-[120px]">
           <div className="text-white/80 text-xs md:text-sm font-medium uppercase tracking-wider">Reps</div>
           <div className="text-white text-3xl md:text-5xl font-bold leading-none mt-1">{counter}</div>
         </div>
@@ -231,7 +238,7 @@ export default function CameraPage() {
 
       {/* Feedback - Top Right */}
       <div className="absolute top-24 md:top-20 right-4 z-30">
-        <div className="bg-black/40 backdrop-blur-md border border-white/20 rounded-xl p-3 md:p-4 max-w-[200px] md:max-w-xs">
+        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-3 md:p-4 max-w-[200px] md:max-w-xs">
           <div className="text-white/80 text-xs md:text-sm font-medium uppercase tracking-wider mb-1">Feedback</div>
           <div className="text-white text-sm md:text-base font-medium leading-tight">{feedback}</div>
         </div>
@@ -277,7 +284,7 @@ export default function CameraPage() {
           {/* Angle display */}
           <div className="mb-4">
             <h3 className="text-white/80 text-sm md:text-base font-semibold uppercase tracking-wider mb-2">Squat Analysis</h3>
-            <div className="grid grid-cols-2 gap-x-4 md:gap-x-6 gap-y-1 text-xs md:text-sm font-mono bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg p-3">
+            <div className="grid grid-cols-2 gap-x-4 md:gap-x-6 gap-y-1 text-xs md:text-sm font-mono bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-3">
                 <span className="text-white/90">L.Hip: <span className="text-white font-semibold">{Math.round(angles.leftHip)}°</span></span>
                 <span className="text-white/90">R.Hip: <span className="text-white font-semibold">{Math.round(angles.rightHip)}°</span></span>
                 <span className="text-white/90">L.Knee: <span className="text-white font-semibold">{Math.round(angles.leftKnee)}°</span></span>

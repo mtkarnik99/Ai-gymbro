@@ -19,13 +19,13 @@ export default function LandingPage() {
 
           <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6 mt-4 leading-tight">
             Perfect Your
-            <span className="text-blue-600 block">Squat Form</span>
-            with AI
+            <span className="text-blue-600 block">Workout Form</span>
+            with AI Gymbro!
           </h1>
 
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed">
-            Get real-time AI feedback on your squat form using advanced joint tracking. Improve your technique with
-            instant voice coaching.
+            Get real-time AI feedback on your exercise form using advanced joint tracking. Improve your technique with
+            instant voice coaching and no cost!
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
@@ -39,17 +39,6 @@ export default function LandingPage() {
               Watch Demo
             </Button>
           </div>
-
-          {/* Hero Image Placeholder */}
-          <div className="relative max-w-4xl mx-auto">
-            <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl p-8 shadow-2xl">
-              <img
-                src="/placeholder.svg?height=400&width=600"
-                alt="Squat form tracking interface"
-                className="w-full h-auto rounded-lg shadow-lg"
-              />
-            </div>
-          </div>
         </section>
 
         {/* Features Section */}
@@ -57,7 +46,8 @@ export default function LandingPage() {
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Advanced Form Analysis</h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Our AI analyzes your movement in real-time to help you achieve perfect squat form
+              Our AI analyzes your movement in real-time to help you achieve perfect exercise form, whether it be squats or pushups!
+              AI Gymbro can be your personal trainer anywhere!
             </p>
           </div>
 
@@ -69,7 +59,7 @@ export default function LandingPage() {
                 </div>
                 <h3 className="text-xl font-semibold mb-4">Live Joint Tracking</h3>
                 <p className="text-gray-600">
-                  Advanced computer vision tracks hip, neck, leg, and ankle joints in real-time for precise form analysis
+                  Advanced computer vision tracks joints angles in real-time for precise form analysis.
                 </p>
               </CardContent>
             </Card>
@@ -81,7 +71,7 @@ export default function LandingPage() {
                 </div>
                 <h3 className="text-xl font-semibold mb-4">AI Voice Coaching</h3>
                 <p className="text-gray-600">
-                  Get instant text-to-speech feedback on your form with personalized coaching cues
+                  Get instant text-to-speech feedback on your form with personalized coaching cues.
                 </p>
               </CardContent>
             </Card>
@@ -104,6 +94,7 @@ export default function LandingPage() {
         <section className="py-16 bg-white rounded-3xl shadow-lg">
           <div className="container mx-auto px-8">
             <div className="grid md:grid-cols-2 gap-12 items-center">
+            
               <div>
                 <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">Why Choose Our AI Trainer?</h2>
 
@@ -112,7 +103,7 @@ export default function LandingPage() {
                     <CheckCircle className="w-6 h-6 text-green-500 mt-1 flex-shrink-0" />
                     <div>
                       <h3 className="font-semibold text-lg mb-2">Prevent Injuries</h3>
-                      <p className="text-gray-600">Real-time form correction helps prevent common squat injuries</p>
+                      <p className="text-gray-600">Real-time form correction helps prevent common exercise injuries.</p>
                     </div>
                   </div>
 
@@ -120,7 +111,7 @@ export default function LandingPage() {
                     <CheckCircle className="w-6 h-6 text-green-500 mt-1 flex-shrink-0" />
                     <div>
                       <h3 className="font-semibold text-lg mb-2">Faster Progress</h3>
-                      <p className="text-gray-600">Immediate feedback accelerates your learning curve</p>
+                      <p className="text-gray-600">Immediate feedback accelerates your learning curve.</p>
                     </div>
                   </div>
 
@@ -128,7 +119,7 @@ export default function LandingPage() {
                     <CheckCircle className="w-6 h-6 text-green-500 mt-1 flex-shrink-0" />
                     <div>
                       <h3 className="font-semibold text-lg mb-2">Personal Trainer 24/7</h3>
-                      <p className="text-gray-600">Get expert coaching anytime, anywhere with your mobile device</p>
+                      <p className="text-gray-600">Get expert coaching anytime, anywhere with your mobile device.</p>
                     </div>
                   </div>
                 </div>
