@@ -26,6 +26,7 @@ class FeedbackRequest(BaseModel):
     angles: dict
     repCount: int
     formError: str | None = None # The specific error detected by the frontend
+    voice_id: str | None = None
 
 def generate_prompt(data: FeedbackRequest) -> str:
     # Base persona for the AI
@@ -80,8 +81,10 @@ async def generate_voice_feedback(data: FeedbackRequest):
     feedback_text = get_llm_feedback(data)
     print(f"LLM generated: '{feedback_text}'")
     try:
+        # Use the voice_id from the request, fallback to female if missing
+        voice_id = getattr(data, "voice_id", "cgSgspJ2msm6clMCkdW9")
         audio_stream = eleven_client.text_to_speech.convert(
-            voice_id="cgSgspJ2msm6clMCkdW9",
+            voice_id=voice_id,
             text=feedback_text,
             model_id="eleven_turbo_v2",
         )
