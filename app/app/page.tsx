@@ -7,15 +7,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { useCamera } from "../../app/hooks/useCamera";
 import { usePoseEstimation } from "../../app/hooks/usePoseEstimation";
 import { useSquatAnalysis } from "../../app/hooks/useSquatAnalysis"
+import { usePushupAnalysis } from "../../app/hooks/usePushupAnalysis"; // Import the new hook
 
 export default function CameraPage() {
   const { videoRef, isCameraOn, facingMode, error, startCamera, toggleCamera, switchCamera } = useCamera();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { landmarks } = usePoseEstimation({ videoRef, isCameraOn });
-  const { angles, counter, feedback } = useSquatAnalysis(landmarks);
+  const [exercise, setExercise] = useState<'squat' | 'pushup'>('squat');
+  const squatAnalysis = useSquatAnalysis(landmarks);
+  const pushupAnalysis = usePushupAnalysis(landmarks);
+  const { angles, counter, feedback } = exercise === 'squat' ? squatAnalysis : pushupAnalysis;
   const [voiceGender, setVoiceGender] = useState<string>("female")
   const [language, setLanguage] = useState<string>("english")
-  const [stage, setStage] = useState<'up' | 'down'>('up');
 
   useEffect(() => {
     startCamera();
@@ -194,6 +197,20 @@ export default function CameraPage() {
                 </Select>
               </div>
 
+              {/* Exercise Selection */}
+              <div className="flex items-center space-x-2">
+                <span className="text-white text-sm">Exercise:</span>
+                <Select value={exercise} onValueChange={(value) => setExercise(value as 'squat' | 'pushup')}>
+                    <SelectTrigger className="w-28 bg-white/10 border-white/20 text-white">
+                    <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                    <SelectItem value="squat">Squat</SelectItem>
+                    <SelectItem value="pushup">Push-up</SelectItem>
+                    </SelectContent>
+                </Select>
+              </div>
+
               {/* Camera Controls */}
               <div className="flex items-center space-x-2">
                 <Button
@@ -223,7 +240,7 @@ export default function CameraPage() {
 
       {/* Rep Counter - Top Left */}
       <div className="absolute top-24 md:top-20 left-4 z-30">
-        <div className="bg-black/40 backdrop-blur-md border border-white/20 rounded-xl p-3 md:p-4 text-center min-w-[100px] md:min-w-[120px]">
+        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-3 md:p-4 text-center min-w-[100px] md:min-w-[120px]">
           <div className="text-white/80 text-xs md:text-sm font-medium uppercase tracking-wider">Reps</div>
           <div className="text-white text-3xl md:text-5xl font-bold leading-none mt-1">{counter}</div>
         </div>
@@ -231,7 +248,7 @@ export default function CameraPage() {
 
       {/* Feedback - Top Right */}
       <div className="absolute top-24 md:top-20 right-4 z-30">
-        <div className="bg-black/40 backdrop-blur-md border border-white/20 rounded-xl p-3 md:p-4 max-w-[200px] md:max-w-xs">
+        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-3 md:p-4 max-w-[200px] md:max-w-xs">
           <div className="text-white/80 text-xs md:text-sm font-medium uppercase tracking-wider mb-1">Feedback</div>
           <div className="text-white text-sm md:text-base font-medium leading-tight">{feedback}</div>
         </div>
@@ -276,18 +293,30 @@ export default function CameraPage() {
           
           {/* Angle display */}
           <div className="mb-4">
-            <h3 className="text-white/80 text-sm md:text-base font-semibold uppercase tracking-wider mb-2">Squat Analysis</h3>
-            <div className="grid grid-cols-2 gap-x-4 md:gap-x-6 gap-y-1 text-xs md:text-sm font-mono bg-black/20 backdrop-blur-sm border border-white/10 rounded-lg p-3">
-                <span className="text-white/90">L.Hip: <span className="text-white font-semibold">{Math.round(angles.leftHip)}°</span></span>
-                <span className="text-white/90">R.Hip: <span className="text-white font-semibold">{Math.round(angles.rightHip)}°</span></span>
-                <span className="text-white/90">L.Knee: <span className="text-white font-semibold">{Math.round(angles.leftKnee)}°</span></span>
-                <span className="text-white/90">R.Knee: <span className="text-white font-semibold">{Math.round(angles.rightKnee)}°</span></span>
+            <h3 className="text-white/80 text-sm md:text-base font-semibold uppercase tracking-wider mb-2">
+                {exercise === 'squat' ? 'Squat Analysis' : 'Push-up Analysis'}
+            </h3>
+            <div className="grid grid-cols-2 gap-x-4 md:gap-x-6 gap-y-1 text-xs md:text-sm font-mono bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-3">
+                {exercise === 'squat' ? (
+                <>
+                    <span className="text-white/90">L.Hip: <span className="text-white font-semibold">{Math.round(squatAnalysis.angles.leftHip)}°</span></span>
+                    <span className="text-white/90">R.Hip: <span className="text-white font-semibold">{Math.round(squatAnalysis.angles.rightHip)}°</span></span>
+                    <span className="text-white/90">L.Knee: <span className="text-white font-semibold">{Math.round(squatAnalysis.angles.leftKnee)}°</span></span>
+                    <span className="text-white/90">R.Knee: <span className="text-white font-semibold">{Math.round(squatAnalysis.angles.rightKnee)}°</span></span>
+                </>
+                ) : (
+                <>
+                    <span className="text-white/90">L.Elbow: <span className="text-white font-semibold">{Math.round(pushupAnalysis.angles.leftElbow)}°</span></span>
+                    <span className="text-white/90">R.Elbow: <span className="text-white font-semibold">{Math.round(pushupAnalysis.angles.rightElbow)}°</span></span>
+                    <span className="text-white/90">L.Hip: <span className="text-white font-semibold">{Math.round(pushupAnalysis.angles.bodyAngle)}°</span></span>
+                </>
+                )}
             </div>
           </div>
           
           {/* Settings summary */}
           <div className="text-white/60 text-xs md:text-sm border-t border-white/10 pt-3 text-center">
-            Voice: {voiceGender} | Language: {language.charAt(0).toUpperCase() + language.slice(1)}
+            Voice: {voiceGender} | Language: {language.charAt(0).toUpperCase() + language.slice(1)} | Exercise: {exercise.charAt(0).toUpperCase() + exercise.slice(1)}
           </div>
         </div>
       </div>
