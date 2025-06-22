@@ -37,7 +37,7 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
-api_key = os.getenv("ELEVEN_API_KEY")
+api_key = "sk_e8be1fd1802da33b0626966a2d6d574c5ccbce8f005a6e80"
 
 # Initialize ElevenLabs client
 client = ElevenLabs(api_key=api_key)
@@ -163,7 +163,7 @@ def give_pose_feedback(pose_data, voice_id="cgSgspJ2msm6clMCkdW9"):
 
 if __name__ == "__main__":
     example_pose = {
-        "neck_angle": 68.3,
+        "neck_angle": 90,
         "spine_angle": 76.1,
         "shoulder_delta": 22.5
     }

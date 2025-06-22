@@ -19,7 +19,12 @@ export default function CameraPage() {
   const [exercise, setExercise] = useState<'squat' | 'pushup'>('squat');
   const squatAnalysis = useSquatAnalysis(landmarks);
   const pushupAnalysis = usePushupAnalysis(landmarks);
-  const { angles, counter, feedback } = exercise === 'squat' ? squatAnalysis : pushupAnalysis;
+  const activeAnalysis = exercise === 'squat' ? squatAnalysis : pushupAnalysis;
+  const { angles, counter, formError } = activeAnalysis; 
+
+  const isFetchingFeedback = useRef(false);
+  const lastErrorTimestamp = useRef(0);
+  
   const [voiceGender, setVoiceGender] = useState<string>("female")
   const [language, setLanguage] = useState<string>("english")
 
@@ -50,6 +55,54 @@ export default function CameraPage() {
     [24, 26], // Right hip to right knee
     [26, 28], // Right knee to right ankle
   ]
+
+  useEffect(() => {
+    // Only trigger if there is a NEW form error
+    if (formError && !isFetchingFeedback.current) {
+      
+      const now = Date.now();
+      // Throttle requests: only allow one every 3 seconds
+      if (now - lastErrorTimestamp.current < 3000) {
+        return;
+      }
+      lastErrorTimestamp.current = now;
+      isFetchingFeedback.current = true;
+
+      const getAndPlayAIFeedback = async () => {
+        try {
+          const response = await fetch('http://localhost:8000/generate-voice-feedback', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ angles }), // Send the current angles
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to get audio feedback from server.');
+          }
+
+          // Get the audio data as a 'blob'
+          const audioBlob = await response.blob();
+          
+          // Create a URL for the blob and play it
+          const audioUrl = URL.createObjectURL(audioBlob);
+          const audio = new Audio(audioUrl);
+          audio.play();
+
+          // Clean up the URL object after it has played
+          audio.onended = () => {
+            URL.revokeObjectURL(audioUrl);
+          };
+
+        } catch (e) {
+          console.error("Failed to fetch or play AI feedback", e);
+        } finally {
+          isFetchingFeedback.current = false; // Allow new requests
+        }
+      };
+
+      getAndPlayAIFeedback();
+    }
+  }, [formError, angles]);
 
   // This useEffect is dedicated to drawing the skeleton and landmarks
   useEffect(() => {
@@ -257,7 +310,7 @@ export default function CameraPage() {
       <div className="absolute top-24 md:top-20 right-4 z-30">
         <div className="bg-black/40 backdrop-blur-md border border-white/20 rounded-xl p-3 md:p-4 max-w-[200px] md:max-w-xs">
           <div className="text-white/80 text-xs md:text-sm font-medium uppercase tracking-wider mb-1">Feedback</div>
-          <div className="text-white text-sm md:text-base font-medium leading-tight">{feedback}</div>
+          <div className="text-white text-sm md:text-base font-medium leading-tight">{formError}</div>
         </div>
       </div>
 

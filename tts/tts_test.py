@@ -37,7 +37,7 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
-api_key = os.getenv("ELEVEN_API_KEY")
+api_key = "sk_e8be1fd1802da33b0626966a2d6d574c5ccbce8f005a6e80"
 
 # Initialize ElevenLabs client
 client = ElevenLabs(api_key=api_key)
