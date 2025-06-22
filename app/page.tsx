@@ -44,6 +44,13 @@ export default function LandingPage() {
               <Button
                 variant="outline"
                 size="lg"
+                onClick={() =>
+                  window.open(
+                    "https://www.youtube.com/watch?v=N7-vfCMKyMo",
+                    "_blank",
+                    "noopener"
+                  )
+                }
                 className="bg-white/80 backdrop-blur-sm text-gray-700 border-2 border-pink-300 hover:border-pink-400 hover:bg-pink-50/80 px-8 py-3 shadow-lg"
               >
                 Watch Demo
