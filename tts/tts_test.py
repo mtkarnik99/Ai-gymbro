@@ -60,9 +60,9 @@ def generate_prompt_from_pose(pose_data):
     return f"""
 You are a supportive posture coach. The user’s pose measurements are:
 
-- Neck angle: {pose_data['neck_angle']} degrees
-- Spine angle: {pose_data['spine_angle']} degrees
-- Shoulder height difference: {pose_data['shoulder_delta']} pixels (positive = right side higher)
+- Hip angle: {pose_data['hip_angle']} degrees
+- Knee angle: {pose_data['knee_angle']} degrees
+- Shoulder alignment offset: {pose_data['shoulder_angle']} degrees
 
 Give short, friendly feedback to help improve posture. 
 ✅ Your reply must follow these rules:
@@ -131,7 +131,6 @@ def speak_from_queue(chunk_queue, voice_id):
                     "style": 0.4,
                     "speed": 1.2  # ✅ maximum allowed
                 }
-     
             )
             convert_time = time.time() - start_tts
 
@@ -145,26 +144,69 @@ def speak_from_queue(chunk_queue, voice_id):
 
 # ------------------- Main Logic -------------------
 
-def give_pose_feedback(pose_data, voice_id="cgSgspJ2msm6clMCkdW9"):
-    """Streams LLM output and speaks it live."""
-    prompt = generate_prompt_from_pose(pose_data)
-    print("[DEBUG] Prompt generated for LLM.")
+# def give_pose_feedback(pose_data, voice_id="cgSgspJ2msm6clMCkdW9"):
+#     """Streams LLM output and speaks it live."""
+#     prompt = generate_prompt_from_pose(pose_data)
+#     print("[DEBUG] Prompt generated for LLM.")
 
-    chunk_queue = queue.Queue()
-    t1 = threading.Thread(target=stream_from_phi, args=(prompt, chunk_queue))
-    t2 = threading.Thread(target=speak_from_queue, args=(chunk_queue, voice_id))
+#     chunk_queue = queue.Queue()
+#     t1 = threading.Thread(target=stream_from_phi, args=(prompt, chunk_queue))
+#     t2 = threading.Thread(target=speak_from_queue, args=(chunk_queue, voice_id))
 
-    t1.start()
-    t2.start()
-    t1.join()
-    t2.join()
+#     t1.start()
+#     t2.start()
+#     t1.join()
+#     t2.join()
+
+
+def give_pose_feedback(pose_data, is_good_form=False, rep_count=0, voice_id="cgSgspJ2msm6clMCkdW9"):
+    if is_good_form and rep_count > 0 and rep_count % 2 == 0:
+        try:
+            praise_line = "Good form! Keep it up."
+            print(f"[Speaking Praise]: {praise_line}")
+            start_tts = time.time()
+            audio = client.text_to_speech.convert(
+                text=praise_line,
+                voice_id=voice_id,
+                model_id="eleven_monolingual_v1",
+                voice_settings={
+                    "stability": 0.5,
+                    "similarity_boost": 0.75,
+                    "style": 0.4,
+                    "speed": 1.2
+                }
+            )
+            convert_time = time.time() - start_tts
+            start_play = time.time()
+            play(audio)
+            play_time = time.time() - start_play
+            print(f"[TTS CONVERT LATENCY] {convert_time:.2f} s | [PLAYBACK TIME] {play_time:.2f} s")
+        except Exception as e:
+            print(f"[TTS ERROR - Praise] {e}")
+        return
+
+
+
 
 # ------------------- Example -------------------
 
+
 if __name__ == "__main__":
+    rep_count = 1  # Initialize your rep counter
+
     example_pose = {
-        "neck_angle": 68.3,
-        "spine_angle": 76.1,
-        "shoulder_delta": 22.5
+        "hip_angle": 100.0,        # Ideal hip angle at bottom ~90–100°
+        "knee_angle": 95.0,        # Ideal knee angle at bottom ~90–100°
+        "shoulder_angle": 15.0     # Difference between shoulders; low = symmetrical
     }
-    give_pose_feedback(example_pose)
+
+    # Simulate 5 reps
+    for rep in range(1, 10):
+        is_good_form = True  # Simulate a good-form rep
+        good_form_rep_count = rep if is_good_form else 0
+        print(f"\n[Squat Rep {rep}]")
+        give_pose_feedback(example_pose, is_good_form=True, rep_count=rep_count)
+        rep_count += 1  # Increment after calling
+
+
+
