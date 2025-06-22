@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 # --- (Initialization and CORS Middleware remains the same) ---
 load_dotenv()
-ELEVEN_API_KEY = "sk_e8be1fd1802da33b0626966a2d6d574c5ccbce8f005a6e80"
+ELEVEN_API_KEY = os.getenv("ELEVEN_API_KEY")
 app = FastAPI()
 origins = ["http://localhost:3000"]
 eleven_client = ElevenLabs(api_key=ELEVEN_API_KEY)
