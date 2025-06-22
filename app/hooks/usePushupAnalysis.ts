@@ -3,38 +3,49 @@
 import { useState, useEffect } from 'react';
 import { calculateAngle } from '../../lib/utils';
 
+// Define the shape of a landmark point
 interface Landmark {
   x: number; y: number; z: number; visibility: number;
 }
 
+// Landmark indices needed for push-up analysis
 const LANDMARK_INDICES = {
   LEFT_SHOULDER: 11, RIGHT_SHOULDER: 12,
   LEFT_ELBOW: 13, RIGHT_ELBOW: 14,
   LEFT_WRIST: 15, RIGHT_WRIST: 16,
   LEFT_HIP: 23, RIGHT_HIP: 24,
   LEFT_KNEE: 25, RIGHT_KNEE: 26,
-  LEFT_ANKLE: 27, RIGHT_ANKLE: 28,
 };
 
 /**
- * A custom hook for analyzing push-up form.
+ * A robust, stateful custom hook for analyzing push-up form.
+ * It detects form errors and provides a trigger for AI feedback.
  * @param landmarks - An array of pose landmarks from usePoseEstimation.
- * @returns An object containing angles, rep counter, and real-time feedback.
+ * @returns An object containing angles, rep counter, and the current form error.
  */
 export const usePushupAnalysis = (landmarks: Landmark[]) => {
+  // State for the analysis
   const [stage, setStage] = useState<'up' | 'down'>('up');
   const [counter, setCounter] = useState(0);
-  const [feedback, setFeedback] = useState('Begin your push-ups when ready.');
+  const [formError, setFormError] = useState<string | null>(null);
   const [angles, setAngles] = useState({ leftElbow: 0, rightElbow: 0, bodyAngle: 0 });
 
-  const UP_THRESHOLD = 160;
-  const DOWN_THRESHOLD = 90;
-  const PLANK_ALIGNMENT_THRESHOLD = 160; // Angle for a straight body
+  // State for robust rep counting
+  const [upFrames, setUpFrames] = useState(0);
+  const [downFrames, setDownFrames] = useState(0);
+
+  // Constants for tuning the analysis
+  const FRAME_CONFIRMATION_THRESHOLD = 3;
+  const UP_THRESHOLD = 160;    // Angle for a straight arm
+  const DOWN_THRESHOLD = 90;   // Angle for the bottom of a push-up
+  const PLANK_ALIGNMENT_THRESHOLD = 150; // Minimum angle for a straight body/back
 
   useEffect(() => {
     if (!landmarks || landmarks.length === 0) return;
 
     const p = LANDMARK_INDICES;
+    
+    // --- Angle Calculation ---
     const leftShoulder = landmarks[p.LEFT_SHOULDER];
     const rightShoulder = landmarks[p.RIGHT_SHOULDER];
     const leftElbow = landmarks[p.LEFT_ELBOW];
@@ -54,48 +65,49 @@ export const usePushupAnalysis = (landmarks: Landmark[]) => {
     if (rightShoulder?.visibility > 0.5 && rightElbow?.visibility > 0.5 && rightWrist?.visibility > 0.5) {
       newAngles.rightElbow = calculateAngle(rightShoulder, rightElbow, rightWrist);
     }
+    
+    // Calculate body angle using the most visible side
     if (leftShoulder?.visibility > 0.5 && leftHip?.visibility > 0.5 && leftKnee?.visibility > 0.5) {
       newAngles.bodyAngle = calculateAngle(leftShoulder, leftHip, leftKnee);
     } else if (rightShoulder?.visibility > 0.5 && rightHip?.visibility > 0.5 && rightKnee?.visibility > 0.5) {
-        newAngles.bodyAngle = calculateAngle(rightShoulder, rightHip, rightKnee);
+      newAngles.bodyAngle = calculateAngle(rightShoulder, rightHip, rightKnee);
     }
-
 
     setAngles(newAngles);
 
+    // --- Smart Angle Selection ---
     let activeElbowAngle = 0;
-    if (newAngles.leftElbow > 0 && newAngles.rightElbow > 0) {
-      activeElbowAngle = (newAngles.leftElbow + newAngles.rightElbow) / 2;
-    } else if (newAngles.leftElbow > 0) {
-      activeElbowAngle = newAngles.leftElbow;
-    } else {
-      activeElbowAngle = newAngles.rightElbow;
-    }
+    if (newAngles.leftElbow > 0 && newAngles.rightElbow > 0) activeElbowAngle = (newAngles.leftElbow + newAngles.rightElbow) / 2;
+    else if (newAngles.leftElbow > 0) activeElbowAngle = newAngles.leftElbow;
+    else activeElbowAngle = newAngles.rightElbow;
 
     if (activeElbowAngle === 0) return;
 
-    // Rep Counting and Feedback Logic
-    let newFeedback = feedback;
-    if (newAngles.bodyAngle < PLANK_ALIGNMENT_THRESHOLD) {
-        newFeedback = "Keep your back straight!";
-    } else {
-        if (stage === 'up' && activeElbowAngle < DOWN_THRESHOLD) {
-            setStage('down');
-            newFeedback = "Push up!";
-        } else if (stage === 'down' && activeElbowAngle > UP_THRESHOLD) {
-            setStage('up');
-            setCounter(prev => prev + 1);
-            newFeedback = "Good Rep!";
-        } else if (stage === 'up') {
-            newFeedback = (counter > 0) ? "Ready for next rep." : "Begin your push-ups.";
-        }
+    // --- Form Error Detection ---
+    let currentError: string | null = null;
+    if (newAngles.bodyAngle > 0 && newAngles.bodyAngle < PLANK_ALIGNMENT_THRESHOLD) {
+      currentError = "Keep your back straight!";
     }
-    
-    if (newFeedback !== feedback) {
-        setFeedback(newFeedback);
+    setFormError(currentError); // Set or clear the form error for the parent component
+
+    // --- Robust Rep Counting Logic ---
+    if (activeElbowAngle > UP_THRESHOLD) {
+      setUpFrames(prev => prev + 1);
+      setDownFrames(0);
+      if (upFrames > FRAME_CONFIRMATION_THRESHOLD && stage === 'down') {
+        setStage('up');
+        setCounter(prev => prev + 1);
+      }
+    } else if (activeElbowAngle < DOWN_THRESHOLD) {
+      setDownFrames(prev => prev + 1);
+      setUpFrames(0);
+      if (downFrames > FRAME_CONFIRMATION_THRESHOLD && stage === 'up') {
+        setStage('down');
+      }
     }
 
-  }, [landmarks, stage, feedback, counter]);
+  }, [landmarks, stage, upFrames, downFrames]);
 
-  return { angles, counter, feedback };
+  // Return the same object shape as useSquatAnalysis
+  return { angles, counter, formError };
 };
