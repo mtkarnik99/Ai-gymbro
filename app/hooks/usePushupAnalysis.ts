@@ -1,7 +1,7 @@
 // app/hooks/usePushupAnalysis.ts
 
 import { useState, useEffect } from 'react';
-import { calculateAngle } from '../../lib/utils';
+import { calculateAngle } from '../../lib/utils'; // Ensure this path is correct
 
 // Define the shape of a landmark point
 interface Landmark {
@@ -20,11 +20,12 @@ const LANDMARK_INDICES = {
 /**
  * A robust, stateful custom hook for analyzing push-up form.
  * It detects form errors and provides a trigger for AI feedback.
- * @param landmarks - An array of pose landmarks from usePoseEstimation.
+ * @param landmarks - An array of pose landmarks.
+ * @param exercise - The currently selected exercise ('squat' or 'pushup').
  * @returns An object containing angles, rep counter, and the current form error.
  */
-export const usePushupAnalysis = (landmarks: Landmark[]) => {
-  // State for the analysis
+export const usePushupAnalysis = (landmarks: any[], exercise: 'squat' | 'pushup') => {
+  // --- Internal State for the Hook ---
   const [stage, setStage] = useState<'up' | 'down'>('up');
   const [counter, setCounter] = useState(0);
   const [formError, setFormError] = useState<string | null>(null);
@@ -33,15 +34,30 @@ export const usePushupAnalysis = (landmarks: Landmark[]) => {
   // State for robust rep counting
   const [upFrames, setUpFrames] = useState(0);
   const [downFrames, setDownFrames] = useState(0);
-
+  
   // Constants for tuning the analysis
   const FRAME_CONFIRMATION_THRESHOLD = 3;
-  const UP_THRESHOLD = 160;    // Angle for a straight arm
+  const UP_THRESHOLD = 160;    // Angle for a straight arm in the "up" position
   const DOWN_THRESHOLD = 90;   // Angle for the bottom of a push-up
   const PLANK_ALIGNMENT_THRESHOLD = 150; // Minimum angle for a straight body/back
 
+  // This useEffect resets the state if the user switches to a different exercise
   useEffect(() => {
-    if (!landmarks || landmarks.length === 0) return;
+    if (exercise !== 'pushup') {
+      setCounter(0);
+      setStage('up');
+      setFormError(null);
+      setUpFrames(0);
+      setDownFrames(0);
+    }
+  }, [exercise]);
+
+  // This is the main analysis effect
+  useEffect(() => {
+    // Guard clause to stop processing if this is not the active exercise
+    if (exercise !== 'pushup' || !landmarks || landmarks.length === 0) {
+      return;
+    }
 
     const p = LANDMARK_INDICES;
     
@@ -59,6 +75,7 @@ export const usePushupAnalysis = (landmarks: Landmark[]) => {
 
     const newAngles = { leftElbow: 0, rightElbow: 0, bodyAngle: 0 };
 
+    // Calculate elbow angles
     if (leftShoulder?.visibility > 0.5 && leftElbow?.visibility > 0.5 && leftWrist?.visibility > 0.5) {
       newAngles.leftElbow = calculateAngle(leftShoulder, leftElbow, leftWrist);
     }
@@ -66,7 +83,7 @@ export const usePushupAnalysis = (landmarks: Landmark[]) => {
       newAngles.rightElbow = calculateAngle(rightShoulder, rightElbow, rightWrist);
     }
     
-    // Calculate body angle using the most visible side
+    // Calculate body angle (shoulder-hip-knee) to check for a straight plank
     if (leftShoulder?.visibility > 0.5 && leftHip?.visibility > 0.5 && leftKnee?.visibility > 0.5) {
       newAngles.bodyAngle = calculateAngle(leftShoulder, leftHip, leftKnee);
     } else if (rightShoulder?.visibility > 0.5 && rightHip?.visibility > 0.5 && rightKnee?.visibility > 0.5) {
@@ -81,14 +98,14 @@ export const usePushupAnalysis = (landmarks: Landmark[]) => {
     else if (newAngles.leftElbow > 0) activeElbowAngle = newAngles.leftElbow;
     else activeElbowAngle = newAngles.rightElbow;
 
-    if (activeElbowAngle === 0) return;
+    if (activeElbowAngle === 0) return; // Fail-safe
 
     // --- Form Error Detection ---
     let currentError: string | null = null;
     if (newAngles.bodyAngle > 0 && newAngles.bodyAngle < PLANK_ALIGNMENT_THRESHOLD) {
       currentError = "Keep your back straight!";
     }
-    setFormError(currentError); // Set or clear the form error for the parent component
+    setFormError(currentError);
 
     // --- Robust Rep Counting Logic ---
     if (activeElbowAngle > UP_THRESHOLD) {
@@ -106,8 +123,8 @@ export const usePushupAnalysis = (landmarks: Landmark[]) => {
       }
     }
 
-  }, [landmarks, stage, upFrames, downFrames]);
+  }, [landmarks, exercise, stage, upFrames, downFrames]);
 
-  // Return the same object shape as useSquatAnalysis
+  // Return the same object shape as useSquatAnalysis for seamless integration
   return { angles, counter, formError };
 };

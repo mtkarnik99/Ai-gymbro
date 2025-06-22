@@ -10,20 +10,21 @@ import { useSquatAnalysis } from "../../app/hooks/useSquatAnalysis"
 import React from "react"
 import Link from "next/link"
 
-import { usePushupAnalysis } from "../../app/hooks/usePushupAnalysis"; // Import the new hook
+import { usePushupAnalysis } from "../../app/hooks/usePushupAnalysis"; 
 
 export default function CameraPage() {
   const { videoRef, isCameraOn, facingMode, error, startCamera, toggleCamera, switchCamera } = useCamera();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { landmarks } = usePoseEstimation({ videoRef, isCameraOn });
   const [exercise, setExercise] = useState<'squat' | 'pushup'>('squat');
-  const squatAnalysis = useSquatAnalysis(landmarks);
-  const pushupAnalysis = usePushupAnalysis(landmarks);
+  const squatAnalysis = useSquatAnalysis(landmarks, exercise);
+  const pushupAnalysis = usePushupAnalysis(landmarks, exercise);
   const activeAnalysis = exercise === 'squat' ? squatAnalysis : pushupAnalysis;
   const { angles, counter, formError } = activeAnalysis; 
+  const prevCounterRef = useRef(counter);
 
   const isFetchingFeedback = useRef(false);
-  const lastErrorTimestamp = useRef(0);
+  const lastEventTimestamp = useRef(0);
   
   const [voiceGender, setVoiceGender] = useState<string>("female")
   const [language, setLanguage] = useState<string>("english")
@@ -57,52 +58,68 @@ export default function CameraPage() {
   ]
 
   useEffect(() => {
-    // Only trigger if there is a NEW form error
-    if (formError && !isFetchingFeedback.current) {
-      
-      const now = Date.now();
-      // Throttle requests: only allow one every 3 seconds
-      if (now - lastErrorTimestamp.current < 3000) {
-        return;
-      }
-      lastErrorTimestamp.current = now;
+    const now = Date.now();
+    if (isFetchingFeedback.current || now - lastEventTimestamp.current < 4000) {
+      return; // Throttle requests to avoid spamming
+    }
+  
+    let eventType: string | null = null;
+    
+    // Check for form errors first (highest priority)
+    if (formError) {
+      eventType = 'form_error';
+    } 
+    // If no errors, check if a new rep was just completed
+    else if (counter > prevCounterRef.current) {
+      eventType = 'rep_complete';
+    }
+  
+    // If a valid event was detected, make the API call
+    if (eventType) {
+      lastEventTimestamp.current = now;
       isFetchingFeedback.current = true;
-
+      
       const getAndPlayAIFeedback = async () => {
         try {
           const response = await fetch('http://localhost:8000/generate-voice-feedback', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ angles }), // Send the current angles
+            // --- THIS IS THE FIX ---
+            // Always send the complete data structure that the backend expects
+            body: JSON.stringify({ 
+              eventType: eventType,
+              exercise: exercise,
+              angles: angles,
+              repCount: counter,
+              formError: formError,
+            }),
           });
-
+          
           if (!response.ok) {
+            console.error("Server responded with an error:", response.status);
             throw new Error('Failed to get audio feedback from server.');
           }
-
-          // Get the audio data as a 'blob'
-          const audioBlob = await response.blob();
           
-          // Create a URL for the blob and play it
+          const audioBlob = await response.blob();
           const audioUrl = URL.createObjectURL(audioBlob);
           const audio = new Audio(audioUrl);
           audio.play();
-
-          // Clean up the URL object after it has played
-          audio.onended = () => {
-            URL.revokeObjectURL(audioUrl);
-          };
-
+          audio.onended = () => URL.revokeObjectURL(audioUrl);
+  
         } catch (e) {
           console.error("Failed to fetch or play AI feedback", e);
         } finally {
-          isFetchingFeedback.current = false; // Allow new requests
+          isFetchingFeedback.current = false;
         }
       };
-
+  
       getAndPlayAIFeedback();
     }
-  }, [formError, angles]);
+  
+    // Update the ref to the current counter value for the next render
+    prevCounterRef.current = counter;
+  
+  }, [formError, counter, angles, exercise]);
 
   // This useEffect is dedicated to drawing the skeleton and landmarks
   useEffect(() => {
