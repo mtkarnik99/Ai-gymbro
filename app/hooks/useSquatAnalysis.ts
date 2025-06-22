@@ -36,7 +36,7 @@ export const useSquatAnalysis = (landmarks: any[], exercise: 'squat' | 'pushup')
   const [downFrames, setDownFrames] = useState(0);
 
   // Constants for tuning the analysis
-  const FRAME_CONFIRMATION_THRESHOLD = 3;
+  const FRAME_CONFIRMATION_THRESHOLD = 50;
   const STANDING_THRESHOLD = 160;
   const SQUAT_THRESHOLD = 100;
   const ANGLE_DEVIATION_THRESHOLD = 20;

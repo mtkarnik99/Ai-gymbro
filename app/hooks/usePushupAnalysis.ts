@@ -34,9 +34,11 @@ export const usePushupAnalysis = (landmarks: any[], exercise: 'squat' | 'pushup'
   // State for robust rep counting
   const [upFrames, setUpFrames] = useState(0);
   const [downFrames, setDownFrames] = useState(0);
+  const [errorFrames, setErrorFrames] = useState(0);
   
   // Constants for tuning the analysis
-  const FRAME_CONFIRMATION_THRESHOLD = 3;
+  const FRAME_CONFIRMATION_THRESHOLD = 50;
+  const ERROR_CONFIRMATION_THRESHOLD = 150; // Frames to confirm an error
   const UP_THRESHOLD = 160;    // Angle for a straight arm in the "up" position
   const DOWN_THRESHOLD = 90;   // Angle for the bottom of a push-up
   const PLANK_ALIGNMENT_THRESHOLD = 150; // Minimum angle for a straight body/back
@@ -49,6 +51,7 @@ export const usePushupAnalysis = (landmarks: any[], exercise: 'squat' | 'pushup'
       setFormError(null);
       setUpFrames(0);
       setDownFrames(0);
+      setErrorFrames(0);
     }
   }, [exercise]);
 
@@ -100,12 +103,19 @@ export const usePushupAnalysis = (landmarks: any[], exercise: 'squat' | 'pushup'
 
     if (activeElbowAngle === 0) return; // Fail-safe
 
-    // --- Form Error Detection ---
-    let currentError: string | null = null;
     if (newAngles.bodyAngle > 0 && newAngles.bodyAngle < PLANK_ALIGNMENT_THRESHOLD) {
-      currentError = "Keep your back straight!";
+      // If form is bad, increment the error frame counter
+      setErrorFrames(prev => prev + 1);
+    } else {
+      // If form is good, reset the counter and clear any existing error
+      setErrorFrames(0);
+      setFormError(null);
     }
-    setFormError(currentError);
+
+    // If the error has persisted past the threshold, set the official error state
+    if (errorFrames > ERROR_CONFIRMATION_THRESHOLD) {
+      setFormError("Keep your back straight!");
+    }
 
     // --- Robust Rep Counting Logic ---
     if (activeElbowAngle > UP_THRESHOLD) {
